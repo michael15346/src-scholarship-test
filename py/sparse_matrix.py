@@ -1,7 +1,7 @@
 from typing import List
 
 import numpy as np
-
+import scipy
 
 class Element:
     def __init__(self, index, value):
@@ -56,18 +56,59 @@ class SparseMatrix:
                 A[i, element.index] = element.value
         return A
 
+    # This might have been better; but sadly 1.5h isn't nearly enough to write all my ideas into code hehe
     def __matmul__(self, other):
 
+        # there 's like legit a lot of existing fast parallel (gpu whatever) algorithms that work and exist publicly
+        # it will be easier to just use those
         # vvvvv your code here vvvvv
-        result = SparseMatrix(dense=self.to_dense() @ other.to_dense())
+
+
+        # Now for some ideas:
+        # you can easily parallelize across m by n workers if you dont care about memory and multiple computations.
+        # you can transform the "custom form" of the matrix if they have  many dense blocks; then multiply them with usual block matrix thing
+        # once again, you could use binary & to find indices that are in both matrices; then only calculate those.
+        n_left = len(self.data_)
+        n_right = len(other.data_)
+        sparse_left = scipy.sparse.lil_matrix((n_left,n_left), dtype=float)
+        sparse_right = scipy.sparse.lil_matrix((n_right, n_right), dtype=float)
+        for i in range(len(self.data_)):
+            for element in self.data_[i]:
+                sparse_left[i, element.index] = element.value
+
+        for i in range(len(other.data_)):
+            for element in other.data_[i]:
+                sparse_right[i, element.index] = element.value
+        sparse_mul = sparse_left @ sparse_right
+        result = SparseMatrix(dense=sparse_mul.todense())
         # ^^^^^ your code here ^^^^^
 
         return result
 
+
     def __pow__(self, power, modulo=None):
 
         # vvvvv your code here vvvvv
-        result = SparseMatrix(dense=np.linalg.matrix_power(self.to_dense(), power))
+        # there might be a cute algorithm to do this efficiently, but the stupid idea is to do matmul until we're done
+        # it might be faster to use eig decomposition, but idk honestly, seems a bit too expensive for really sparse matrices
+        # or something else even
+
+        # Some more ideas:
+        # a) use trivial algorithm, but generate once the list of indices to calculate, then do the usual o(log n) power using matmul
+        # b) if there's a fast way to calculate the eigenvalues, then you can use the fact that A^k = V * D^k * V^-1
+        # where D is a diagonal matrix of eigenvalues and V is a matrix of eigenvectors
+        # c) i think numpy power does the o (log n) algorithm anyway (at least it should for integers)
+        # d): considering a), if the matrix is sufficiently sparse, there will only be a handful of indices to calculate
+
+
+        n = len(self.data_)
+        sparse = scipy.sparse.lil_matrix((n,n), dtype=float)
+        for i in range(len(self.data_)):
+            for element in self.data_[i]:
+                sparse[i, element.index] = element.value
+
+
+        result = SparseMatrix(dense=(sparse ** power).todense())
         # ^^^^^ your code here ^^^^^
 
         return result

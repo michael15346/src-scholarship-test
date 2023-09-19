@@ -1,4 +1,5 @@
 #include "sparse_matrix.h"
+#include <future>
 
 SparseMatrix::SparseMatrix(fs::path fname) {
     std::ifstream stream(fname);
@@ -39,15 +40,18 @@ void SparseMatrix::Print() {
         printf("\n");
     }
 }
+//Hope you don't mind separate functions.
+void matmul_worker(const SparseMatrix& left, const SparseMatrix& right, const SparseMatrix& result) {
+    
+}
 
 SparseMatrix SparseMatrix::operator*(const SparseMatrix &m) {
     SparseMatrix result;
-    // Here's your code
+    //see py for impl that's faster than anything id be able to write here
     return result;
 };
 
 SparseMatrix SparseMatrix::operator^(uint32_t p) {
     SparseMatrix result;
-    // Here's your code
     return result;
 }
